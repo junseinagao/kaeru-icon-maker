@@ -1,45 +1,94 @@
 <script lang="ts">
-  import svelteLogo from './assets/svelte.svg'
-  import Counter from './lib/Counter.svelte'
+  import KaeruImage from "./assets/kaeru.png";
+  import { Canvas, Layer } from "svelte-canvas";
+  let canvasComponent;
+  let anchorRef: HTMLAnchorElement;
+
+  let left = 0;
+  let top = 0;
+  let scale = 1;
+
+  const bgImage = new Image();
+  const inputImage = new Image();
+
+  const onFileSelected = (e) => {
+    const targetImage = e.target.files[0];
+    const reader = new FileReader();
+    reader.readAsDataURL(targetImage);
+    reader.onload = (e) => {
+      inputImage.src = e.target.result as string;
+    };
+  };
+
+  const downloadImage = () => {
+    const canvasDom = canvasComponent.getCanvas();
+    anchorRef.href = canvasDom.toDataURL("image/png");
+    anchorRef.download = "kaeru-icon.png";
+    anchorRef.click();
+  };
+
+  $: kaeruRender = ({ context, width, height }) => {
+    bgImage.src = KaeruImage;
+    context.drawImage(bgImage, 0, 0, width, height);
+  };
+  $: inputRender = ({ context, width, height }) => {
+    context.drawImage(
+      inputImage,
+      0 + left,
+      0 + top,
+      width * scale,
+      height * scale
+    );
+  };
 </script>
 
-<main>
+<h1>Kaeru Icon Genrator</h1>
+
+<div class="center">
+  <Canvas width={640} height={640} bind:this={canvasComponent}>
+    <Layer render={inputRender} />
+    <Layer render={kaeruRender} />
+  </Canvas>
+</div>
+
+<hr />
+
+<input
+  type="file"
+  accept=".jpg, .jpeg, .png"
+  on:change={(e) => onFileSelected(e)}
+/>
+
+<div class="controllers">
   <div>
-    <a href="https://vitejs.dev" target="_blank"> 
-      <img src="/vite.svg" class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank"> 
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
+    <div>タテ</div>
+    <input type="range" min="-512" max="512" bind:value={top} />
   </div>
-  <h1>Vite + Svelte</h1>
-
-  <div class="card">
-    <Counter />
+  <div>
+    <div>ヨコ</div>
+    <input type="range" min="-512" max="512" bind:value={left} />
   </div>
+  <div>
+    <div>スケール</div>
+    <input type="range" min="0" max="2" step="0.1" bind:value={scale} />
+  </div>
+</div>
 
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
+<button class="button" on:click={downloadImage}>ダウンロード</button>
 
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
-</main>
+<!-- svelte-ignore a11y-missing-attribute -->
+<!-- svelte-ignore a11y-missing-content -->
+<a bind:this={anchorRef} />
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
+  .controllers {
+    display: flex;
+    justify-content: center;
+    column-gap: 1rem;
   }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
+
+  .center {
+    display: flex;
+    justify-content: center;
   }
 </style>
